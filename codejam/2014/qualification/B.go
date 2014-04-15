@@ -45,37 +45,40 @@ func main() {
 
 	for testNumber := 1; testNumber <= testsRemaining; testNumber++ {
 		Debug("Test number %d\n", testNumber)
-		//Number of tests doesn't really matter.  We'll panic if we don't have the same number of blocks, regardless
-		readLine()
+		inputs := getFloatsFromLine()
 
-		//Now, get to work..
-		myBlocks := getFloatsFromLine()
-		opponentBlocks := getFloatsFromLine()
-		if len(myBlocks) !=  len(opponentBlocks) {
-			panic(fmt.Sprintf("Someone's cheating.. I have %d blocks and my opponent has %d blocks", myBlocks, opponentBlocks))
-		}
-		
-		sort.Sort(myBlocks)
-		sort.Sort(opponentBlocks)
-		cheatingWins := 0
-		cheatingLosses := 0
-		realWins := 0
-		for i := 0; i < len(myBlocks); i++ {
-			//If we're cheating, we want to maximize our losses by popping off his biggest tiles with our worst ones
-			if myBlocks[i] < opponentBlocks[i - cheatingLosses] {
-				cheatingLosses++
+		factoryCost := inputs[0]
+		factoryRate := inputs[1]
+		totalTarget := inputs[2]
+		currentRate := 2.0
+		totalTime := 0.0
+		stepTime := 0.0
+		for {
+			totalTime += stepTime
+			timeUntilComplete := totalTarget / currentRate
+			timeUntilFactory := factoryCost / currentRate
+			stepTime = timeUntilComplete
+			Debug("Time until complete: %f\n", timeUntilComplete)
+			Debug("Time until factory: %f\n", timeUntilFactory)
+			if timeUntilFactory < timeUntilComplete {
+				newRate := currentRate + factoryRate
+				newTimeUntilComplete := totalTarget / newRate + timeUntilFactory
+				if newTimeUntilComplete < timeUntilComplete {
+					Debug("Build next factory!\n")
+					stepTime = timeUntilFactory
+					currentRate = newRate
+				} else {
+					Debug("We're done, too long!\n")
+					break
+				}
 			} else {
-				cheatingWins++
-			}
-			//If we're not cheating, our opponent will win by the smallest margin possible, effectively shifting 1 position each time he has to lose
-			if myBlocks[i - realWins] > opponentBlocks[i] {
-				realWins++
+				Debug("We're done, too expensive!\n")
+				break
 			}
 		}
-		Debug("I just cheated, and won %d times!\n", cheatingWins)
-		Debug("If I had not cheated, I would have only won %d times\n", realWins)
-		fmt.Fprintf(outputFile, "Case #%d: %d %d\n", testNumber, cheatingWins, realWins)
-		fmt.Printf("Processed %d of %d tests\n", testNumber, testsRemaining)
+		totalTime += stepTime
+		
+		fmt.Fprintf(outputFile, "Case #%d: %f\n", testNumber, totalTime)
 	}
 }
 
